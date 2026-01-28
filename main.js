@@ -24,14 +24,6 @@ const filter7d = document.getElementById('filter-7d');
 const filter30d = document.getElementById('filter-30d');
 const modeHot = document.getElementById('mode-hot');
 const modeStable = document.getElementById('mode-stable');
-const filterForm = document.getElementById('filter-form');
-const filterReset = document.getElementById('filter-reset');
-const filterRegion = document.getElementById('filter-region');
-const filterLanguage = document.getElementById('filter-language');
-const filterCategory = document.getElementById('filter-category');
-const filterMinSubs = document.getElementById('filter-min-subs');
-const filterMaxSubs = document.getElementById('filter-max-subs');
-const filterExclude = document.getElementById('filter-exclude');
 
 let currentFilter = 'today';
 let currentMode = 'hot';
@@ -188,28 +180,6 @@ async function fetchVideos(period, mode) {
     return data.items || [];
 }
 
-function syncFiltersToState() {
-    FILTER_CONFIG.region = filterRegion.value.trim() || 'KR';
-    FILTER_CONFIG.language = filterLanguage.value.trim() || 'ko';
-    FILTER_CONFIG.categoryId = filterCategory.value.trim();
-    FILTER_CONFIG.minSubs = parseInt(filterMinSubs.value, 10) || 0;
-    FILTER_CONFIG.maxSubs = parseInt(filterMaxSubs.value, 10) || 0;
-    FILTER_CONFIG.excludeKeywords = filterExclude.value
-        .split(',')
-        .map(keyword => keyword.trim())
-        .filter(Boolean);
-}
-
-function resetFilters() {
-    filterRegion.value = 'KR';
-    filterLanguage.value = 'ko';
-    filterCategory.value = '';
-    filterMinSubs.value = '';
-    filterMaxSubs.value = '';
-    filterExclude.value = '';
-    syncFiltersToState();
-}
-
 // --- 이벤트 리스너 ---
 document.addEventListener('DOMContentLoaded', () => {
     filterVideos(currentFilter); 
@@ -236,17 +206,6 @@ modeHot.addEventListener('click', () => {
 modeStable.addEventListener('click', () => {
     currentMode = 'stable';
     setActiveButton(modeStable, [modeHot, modeStable]);
-    filterVideos(currentFilter);
-});
-
-filterForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    syncFiltersToState();
-    filterVideos(currentFilter);
-});
-
-filterReset.addEventListener('click', () => {
-    resetFilters();
     filterVideos(currentFilter);
 });
 
