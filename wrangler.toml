@@ -1,4 +1,4 @@
-name = "youtube-issue-worker"
+name = "yt-feed-hub"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 account_id = "6ca82b5f61c22dc2a98d85fa53dbcc6d"
