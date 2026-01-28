@@ -38,6 +38,26 @@ function debounce(func, delay) {
     };
 }
 
+function formatLocalDate(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function getWeekOfMonth(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun..6=Sat
+    const firstDayMondayIndex = (firstDay + 6) % 7; // 0=Mon..6=Sun
+    return Math.floor((date.getDate() + firstDayMondayIndex - 1) / 7) + 1;
+}
+
+function getWeeksInMonth(year, monthIndex) {
+    const lastDay = new Date(year, monthIndex + 1, 0);
+    return getWeekOfMonth(lastDay);
+}
+
 // --- 인피니트 스크롤 관련 함수 ---
 function loadNextVideos() {
     if (isRendering) return;
@@ -60,11 +80,11 @@ function filterVideos(period) {
     loadedVideosCount = 0; // 로드된 개수 초기화
     
     let filteredVideos = [];
-    const today = new Date('2026-01-28'); // 오늘 날짜 고정
+    const today = new Date(); // 실제 오늘 날짜 사용
+    const todayString = formatLocalDate(today);
 
     switch(period) {
         case 'today':
-            const todayString = today.toISOString().split('T')[0];
             filteredVideos = sampleVideos.filter(video => video.uploadDate === todayString);
             break;
         case 'year':
@@ -76,11 +96,12 @@ function filterVideos(period) {
                 const parts = period.split(' ');
                 const month = parseInt(parts[0].replace('월', ''));
                 const week = parseInt(parts[1].replace('주차', ''));
-                const startDate = (week - 1) * 7 + 1;
-                const endDate = week * 7;
                 filteredVideos = sampleVideos.filter(video => {
                     const videoDate = new Date(video.uploadDate);
-                    return videoDate.getMonth() + 1 === month && videoDate.getDate() >= startDate && videoDate.getDate() <= endDate;
+                    return (
+                        videoDate.getMonth() + 1 === month &&
+                        getWeekOfMonth(videoDate) === week
+                    );
                 });
             } else {
                  filteredVideos = sampleVideos;
@@ -120,7 +141,8 @@ function renderNewVideos(videos) {
 // --- 월별/주차별 메뉴 생성 ---
 function createMonthlyMenu() {
     const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-    months.forEach((month) => {
+    const currentYear = new Date().getFullYear();
+    months.forEach((month, monthIndex) => {
         const monthLi = document.createElement('li');
         const monthDiv = document.createElement('div');
         monthDiv.className = 'dropend';
@@ -135,7 +157,8 @@ function createMonthlyMenu() {
         const weekUl = document.createElement('ul');
         weekUl.className = 'dropdown-menu';
 
-        for (let i = 1; i <= 4; i++) {
+        const weeksInMonth = getWeeksInMonth(currentYear, monthIndex);
+        for (let i = 1; i <= weeksInMonth; i++) {
             const weekLi = document.createElement('li');
             const weekA = document.createElement('a');
             weekA.className = 'dropdown-item';
