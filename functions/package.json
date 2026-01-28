@@ -1,0 +1,12 @@
+{
+  "name": "functions",
+  "private": true,
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "firebase-functions": "^4.6.0"
+  }
+}

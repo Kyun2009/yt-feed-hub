@@ -15,33 +15,35 @@
         <div class="container hero-inner">
             <span class="hero-kicker">Trending Radar</span>
             <h1 class="hero-title">유튜브 인기 영상</h1>
-            <p class="hero-subtitle">오늘 뜨는 영상을 빠르게 모아보고, 월/주차별로 다시 꺼내보세요.</p>
+            <p class="hero-subtitle">오늘·최근 3일·7일·30일 기준으로 이슈 영상을 우선순위로 보여줍니다.</p>
         </div>
     </header>
 
     <nav class="navbar navbar-expand-lg filter-bar">
         <div class="container">
-            <a class="navbar-brand" href="#">기간 선택</a>
+            <span class="navbar-brand" aria-hidden="true"></span>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" id="filter-today">오늘</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            주/월별
-                        </a>
-                        <ul class="dropdown-menu" id="filter-monthly">
-                            <!-- 월별/주차별 메뉴가 여기에 동적으로 추가됩니다 -->
-                        </ul>
+                        <a class="nav-link active" href="#" id="filter-today">오늘</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#" id="filter-year">올해</a>
+                        <a class="nav-link" href="#" id="filter-3d">최근3일</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="filter-7d">일주일</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="filter-30d">30일</a>
                     </li>
                 </ul>
+                <div class="mode-toggle btn-group" role="group" aria-label="목적 선택">
+                    <button type="button" class="btn btn-outline-primary active" id="mode-hot">급상승</button>
+                    <button type="button" class="btn btn-outline-primary" id="mode-stable">전체</button>
+                </div>
             </div>
         </div>
     </nav>

@@ -1,3 +1,6 @@
 # Logs
 firebase-debug.log
 .DS_Store
+node_modules/
+.firebase/
+functions/.env
