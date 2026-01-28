@@ -1,4 +1,4 @@
-// 샘플 동영상 데이터 (글로벌 인기 영상으로 복구)
+// 샘플 동영상 데이터 (API 실패 시 폴백)
 const sampleVideos = [
     { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE(강남스타일) M/V', channel: 'officialpsy', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/9bZkp7q19f0/0.jpg' },
     { id: 'gdZLi9oWNZg', title: 'BTS (방탄소년단) \'Dynamite\' Official MV', channel: 'HYBE LABELS', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/gdZLi9oWNZg/0.jpg' },
@@ -20,14 +20,27 @@ const sampleVideos = [
 
 const videoList = document.getElementById('video-list');
 const filterToday = document.getElementById('filter-today');
-const filterMonthly = document.getElementById('filter-monthly');
-const filterYear = document.getElementById('filter-year');
+const filter7d = document.getElementById('filter-7d');
+const filter30d = document.getElementById('filter-30d');
+const modeHot = document.getElementById('mode-hot');
+const modeStable = document.getElementById('mode-stable');
 
 let currentFilter = 'today';
+let currentMode = 'hot';
 let currentFilteredVideos = [];
 const VIDEOS_PER_LOAD = 8;
 let loadedVideosCount = 0;
 let isRendering = false;
+const API_ENDPOINT = 'https://youtube-issue-worker.tjdrbs28.workers.dev';
+
+const FILTER_CONFIG = {
+    region: 'KR',
+    language: 'ko',
+    categoryId: '',
+    minSubs: 0,
+    maxSubs: 0,
+    excludeKeywords: []
+};
 
 // --- 유틸리티 함수 ---
 function debounce(func, delay) {
@@ -38,24 +51,9 @@ function debounce(func, delay) {
     };
 }
 
-function formatLocalDate(date) {
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const dd = String(date.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-}
-
-function getWeekOfMonth(date) {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun..6=Sat
-    const firstDayMondayIndex = (firstDay + 6) % 7; // 0=Mon..6=Sun
-    return Math.floor((date.getDate() + firstDayMondayIndex - 1) / 7) + 1;
-}
-
-function getWeeksInMonth(year, monthIndex) {
-    const lastDay = new Date(year, monthIndex + 1, 0);
-    return getWeekOfMonth(lastDay);
+function setActiveButton(activeEl, group) {
+    group.forEach(button => button.classList.remove('active'));
+    activeEl.classList.add('active');
 }
 
 // --- 인피니트 스크롤 관련 함수 ---
@@ -74,41 +72,21 @@ function loadNextVideos() {
 }
 
 // --- 필터링 로직 ---
-function filterVideos(period) {
+async function filterVideos(period) {
     currentFilter = period;
     videoList.innerHTML = ''; // 새 필터 적용 시 목록 초기화
     loadedVideosCount = 0; // 로드된 개수 초기화
     
-    let filteredVideos = [];
-    const today = new Date(); // 실제 오늘 날짜 사용
-    const todayString = formatLocalDate(today);
+    videoList.innerHTML = '<p class="text-center text-muted">로딩 중...</p>';
 
-    switch(period) {
-        case 'today':
-            filteredVideos = sampleVideos.filter(video => video.uploadDate === todayString);
-            break;
-        case 'year':
-            const currentYear = today.getFullYear();
-            filteredVideos = sampleVideos.filter(video => video.uploadDate.startsWith(currentYear.toString()));
-            break;
-        default:
-            if (period.includes('월') && period.includes('주차')) {
-                const parts = period.split(' ');
-                const month = parseInt(parts[0].replace('월', ''));
-                const week = parseInt(parts[1].replace('주차', ''));
-                filteredVideos = sampleVideos.filter(video => {
-                    const videoDate = new Date(video.uploadDate);
-                    return (
-                        videoDate.getMonth() + 1 === month &&
-                        getWeekOfMonth(videoDate) === week
-                    );
-                });
-            } else {
-                 filteredVideos = sampleVideos;
-            }
-            break;
+    try {
+        const apiVideos = await fetchVideos(period, currentMode);
+        currentFilteredVideos = apiVideos.length ? apiVideos : sampleVideos;
+    } catch (error) {
+        currentFilteredVideos = sampleVideos;
     }
-    currentFilteredVideos = filteredVideos;
+
+    videoList.innerHTML = '';
     loadNextVideos(); // 첫번째 배치 로드
 }
 
@@ -123,7 +101,7 @@ function renderNewVideos(videos) {
         const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
         return `
         <div class="col-md-4 col-lg-3 mb-4">
-            <a href="${videoUrl}" target="_blank" class="card-link text-decoration-none text-dark">
+            <a href="${videoUrl}" target="_blank" class="card-link text-decoration-none text-dark" data-video-id="${video.id}">
                 <div class="card h-100">
                     <img src="${video.thumbnail}" class="card-img-top" alt="${video.title}">
                     <div class="card-body d-flex flex-column">
@@ -136,61 +114,100 @@ function renderNewVideos(videos) {
     `}).join('');
 
     videoList.insertAdjacentHTML('beforeend', videoCards);
+
+    // 렌더링된 카드만 골라서 가벼운 재생 가능성 검사
+    videos.forEach(video => {
+        const cardLink = videoList.querySelector(`.card-link[data-video-id="${video.id}"]`);
+        if (cardLink) {
+            checkVideoAvailability(video, cardLink.closest('.col-md-4'));
+        }
+    });
 }
 
-// --- 월별/주차별 메뉴 생성 ---
-function createMonthlyMenu() {
-    const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-    const currentYear = new Date().getFullYear();
-    months.forEach((month, monthIndex) => {
-        const monthLi = document.createElement('li');
-        const monthDiv = document.createElement('div');
-        monthDiv.className = 'dropend';
+function checkVideoAvailability(video, cardContainer) {
+    if (!cardContainer) return;
 
-        const monthA = document.createElement('a');
-        monthA.className = 'dropdown-item dropdown-toggle';
-        monthA.href = '#';
-        monthA.textContent = month;
-        monthA.setAttribute('data-bs-toggle', 'dropdown');
-        monthA.setAttribute('aria-expanded', 'false');
+    // 1) 썸네일 로드 실패 시 숨김
+    const img = new Image();
+    img.onerror = () => {
+        hideUnavailableCard(cardContainer);
+    };
+    img.src = video.thumbnail;
 
-        const weekUl = document.createElement('ul');
-        weekUl.className = 'dropdown-menu';
+    // 2) oEmbed 응답 실패 시 숨김 (CORS/네트워크 실패는 무시)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${video.id}&format=json`;
 
-        const weeksInMonth = getWeeksInMonth(currentYear, monthIndex);
-        for (let i = 1; i <= weeksInMonth; i++) {
-            const weekLi = document.createElement('li');
-            const weekA = document.createElement('a');
-            weekA.className = 'dropdown-item';
-            weekA.href = '#';
-            weekA.textContent = `${i}주차`;
-            weekA.onclick = (e) => {
-                e.stopPropagation();
-                filterVideos(`${month} ${i}주차`);
-                const mainDropdown = bootstrap.Dropdown.getInstance(filterMonthly.previousElementSibling);
-                if (mainDropdown) {
-                    mainDropdown.hide();
-                }
-            };
-            weekLi.appendChild(weekA);
-            weekUl.appendChild(weekLi);
-        }
-        
-        monthDiv.appendChild(monthA);
-        monthDiv.appendChild(weekUl);
-        monthLi.appendChild(monthDiv);
-        filterMonthly.appendChild(monthLi);
+    fetch(oembedUrl, { signal: controller.signal })
+        .then((res) => {
+            clearTimeout(timeoutId);
+            if (!res.ok) {
+                hideUnavailableCard(cardContainer);
+            }
+        })
+        .catch(() => {
+            clearTimeout(timeoutId);
+            // CORS/네트워크 오류는 필터링 정확도를 위해 무시
+        });
+}
+
+function hideUnavailableCard(cardContainer) {
+    cardContainer.style.display = 'none';
+}
+
+async function fetchVideos(period, mode) {
+    const params = new URLSearchParams({
+        period,
+        mode,
+        region: FILTER_CONFIG.region,
+        language: FILTER_CONFIG.language
     });
+
+    if (FILTER_CONFIG.categoryId) params.set('categoryId', FILTER_CONFIG.categoryId);
+    if (FILTER_CONFIG.minSubs) params.set('minSubs', FILTER_CONFIG.minSubs);
+    if (FILTER_CONFIG.maxSubs) params.set('maxSubs', FILTER_CONFIG.maxSubs);
+    if (FILTER_CONFIG.excludeKeywords.length) {
+        params.set('excludeKeywords', FILTER_CONFIG.excludeKeywords.join(','));
+    }
+
+    const response = await fetch(`${API_ENDPOINT}?${params.toString()}`);
+    if (!response.ok) {
+        throw new Error('API request failed');
+    }
+
+    const data = await response.json();
+    return data.items || [];
 }
 
 // --- 이벤트 리스너 ---
 document.addEventListener('DOMContentLoaded', () => {
-    createMonthlyMenu();
     filterVideos(currentFilter); 
 });
 
-filterToday.addEventListener('click', () => filterVideos('today'));
-filterYear.addEventListener('click', () => filterVideos('year'));
+filterToday.addEventListener('click', () => {
+    setActiveButton(filterToday, [filterToday, filter7d, filter30d]);
+    filterVideos('today');
+});
+filter7d.addEventListener('click', () => {
+    setActiveButton(filter7d, [filterToday, filter7d, filter30d]);
+    filterVideos('7d');
+});
+filter30d.addEventListener('click', () => {
+    setActiveButton(filter30d, [filterToday, filter7d, filter30d]);
+    filterVideos('30d');
+});
+
+modeHot.addEventListener('click', () => {
+    currentMode = 'hot';
+    setActiveButton(modeHot, [modeHot, modeStable]);
+    filterVideos(currentFilter);
+});
+modeStable.addEventListener('click', () => {
+    currentMode = 'stable';
+    setActiveButton(modeStable, [modeHot, modeStable]);
+    filterVideos(currentFilter);
+});
 
 window.addEventListener('scroll', debounce(() => {
     // document.documentElement.scrollHeight: 전체 문서의 높이
