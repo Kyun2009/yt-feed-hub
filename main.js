@@ -20,6 +20,7 @@ const sampleVideos = [
 
 const videoList = document.getElementById('video-list');
 const filterToday = document.getElementById('filter-today');
+const filter3d = document.getElementById('filter-3d');
 const filter7d = document.getElementById('filter-7d');
 const filter30d = document.getElementById('filter-30d');
 const modeHot = document.getElementById('mode-hot');
@@ -33,9 +34,10 @@ let loadedVideosCount = 0;
 let isRendering = false;
 const API_ENDPOINT = 'https://youtube-issue-worker.tjdrbs28.workers.dev';
 
+const browserLanguage = (navigator.language || 'en').split('-')[0];
 const FILTER_CONFIG = {
-    region: 'KR',
-    language: 'ko',
+    region: '',
+    language: browserLanguage,
     categoryId: '',
     minSubs: 0,
     maxSubs: 0,
@@ -159,10 +161,11 @@ function hideUnavailableCard(cardContainer) {
 async function fetchVideos(period, mode) {
     const params = new URLSearchParams({
         period,
-        mode,
-        region: FILTER_CONFIG.region,
-        language: FILTER_CONFIG.language
+        mode
     });
+
+    if (FILTER_CONFIG.region) params.set('region', FILTER_CONFIG.region);
+    if (FILTER_CONFIG.language) params.set('language', FILTER_CONFIG.language);
 
     if (FILTER_CONFIG.categoryId) params.set('categoryId', FILTER_CONFIG.categoryId);
     if (FILTER_CONFIG.minSubs) params.set('minSubs', FILTER_CONFIG.minSubs);
@@ -186,15 +189,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 filterToday.addEventListener('click', () => {
-    setActiveButton(filterToday, [filterToday, filter7d, filter30d]);
+    setActiveButton(filterToday, [filterToday, filter3d, filter7d, filter30d]);
     filterVideos('today');
 });
+filter3d.addEventListener('click', () => {
+    setActiveButton(filter3d, [filterToday, filter3d, filter7d, filter30d]);
+    filterVideos('3d');
+});
 filter7d.addEventListener('click', () => {
-    setActiveButton(filter7d, [filterToday, filter7d, filter30d]);
+    setActiveButton(filter7d, [filterToday, filter3d, filter7d, filter30d]);
     filterVideos('7d');
 });
 filter30d.addEventListener('click', () => {
-    setActiveButton(filter30d, [filterToday, filter7d, filter30d]);
+    setActiveButton(filter30d, [filterToday, filter3d, filter7d, filter30d]);
     filterVideos('30d');
 });
 

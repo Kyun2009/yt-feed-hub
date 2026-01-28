@@ -10,6 +10,8 @@ function buildPublishedAfter(period) {
   let start;
   if (period === "today") {
     start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (period === "3d") {
+    start = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
   } else if (period === "30d") {
     start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   } else {
@@ -71,8 +73,11 @@ export default {
     const url = new URL(request.url);
     const period = url.searchParams.get("period") || "7d";
     const mode = url.searchParams.get("mode") || "hot";
-    const region = url.searchParams.get("region") || "KR";
-    const language = url.searchParams.get("language") || "ko";
+    const region =
+      url.searchParams.get("region") ||
+      request.cf?.country ||
+      "US";
+    const language = url.searchParams.get("language") || "en";
     const categoryId = url.searchParams.get("categoryId") || "";
     const minSubs = safeInt(url.searchParams.get("minSubs"));
     const maxSubs = safeInt(url.searchParams.get("maxSubs"));
@@ -244,7 +249,8 @@ export default {
         }
       };
 
-      const periodDays = period === "today" ? 1 : period === "30d" ? 30 : 7;
+      const periodDays =
+        period === "today" ? 1 : period === "3d" ? 3 : period === "30d" ? 30 : 7;
 
       items = items.map((item) => {
         const metrics = item.metrics;
