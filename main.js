@@ -1,12 +1,21 @@
-// 샘플 동영상 데이터 (실제로는 API를 통해 받아옵니다)
+// 샘플 동영상 데이터 (글로벌 인기 영상으로 복구)
 const sampleVideos = [
-    { id: 'dQw4w9WgXcQ', title: '80년대 감성으로 만든 뉴진스(NewJeans)의 Hype Boy', channel: '옛날사람', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/0.jpg' },
-    { id: '3-Xq_Zz3nPA', title: '2026년 새해 첫날 해돋이 명소 BEST 5', channel: '여행가자', uploadDate: '2026-01-01', thumbnail: 'https://img.youtube.com/vi/3-Xq_Zz3nPA/0.jpg' },
-    { id: 'example01', title: '1월 1주차 주간 인기 하이라이트', channel: '요즘영상', uploadDate: '2026-01-05', thumbnail: 'https://img.youtube.com/vi/s-33i9b3L_c/0.jpg' },
-    { id: 'example02', title: '1월 2주차 주간 인기 하이라이트', channel: '요즘영상', uploadDate: '2026-01-12', thumbnail: 'https://img.youtube.com/vi/s-33i9b3L_c/0.jpg' },
-    { id: 'example03', title: '1월 3주차 주간 인기 하이라이트', channel: '요즘영상', uploadDate: '2026-01-19', thumbnail: 'https://img.youtube.com/vi/s-33i9b3L_c/0.jpg' },
-    { id: 'example04', title: '1월 4주차 주간 인기 하이라이트', channel: '요즘영상', uploadDate: '2026-01-26', thumbnail: 'https://img.youtube.com/vi/s-33i9b3L_c/0.jpg' },
-    { id: 'example05', title: '2025년 연말 결산', channel: '요즘영상', uploadDate: '2025-12-31', thumbnail: 'https://img.youtube.com/vi/s-33i9b3L_c/0.jpg' },
+    { id: '9bZkp7q19f0', title: 'PSY - GANGNAM STYLE(강남스타일) M/V', channel: 'officialpsy', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/9bZkp7q19f0/0.jpg' },
+    { id: 'gdZLi9oWNZg', title: 'BTS (방탄소년단) \'Dynamite\' Official MV', channel: 'HYBE LABELS', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/gdZLi9oWNZg/0.jpg' },
+    { id: 'IHNzOHi8sJs', title: 'BLACKPINK - \'뚜두뚜두 (DDU-DU DDU-DU)\' M/V', channel: 'BLACKPINK', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/IHNzOHi8sJs/0.jpg' },
+    { id: 'k4yGDisCj_s', title: 'Luis Fonsi - Despacito ft. Daddy Yankee', channel: 'LuisFonsiVEVO', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/k4yGDisCj_s/0.jpg' },
+    { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You [Official Video]', channel: 'Ed Sheeran', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/JGwWNGJdvx8/0.jpg' },
+    { id: 'v7bnOxV4jAc', title: 'IU(아이유) _ LILAC(라일락) MV', channel: '1theK (원더케이)', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/v7bnOxV4jAc/0.jpg' },
+    { id: 'TQTlCHzgs88', title: 'Stray Kids "神메뉴" M/V', channel: 'JYP Entertainment', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/TQTlCHzgs88/0.jpg' },
+    { id: 'cha_FFxZ-G4', title: 'TWICE "Alcohol-Free" M/V', channel: 'JYP Entertainment', uploadDate: '2026-01-28', thumbnail: 'https://img.youtube.com/vi/cha_FFxZ-G4/0.jpg' },
+    { id: 'CuklIb9d3fI', title: 'Maroon 5 - Girls Like You ft. Cardi B', channel: 'Maroon5VEVO', uploadDate: '2026-01-27', thumbnail: 'https://img.youtube.com/vi/CuklIb9d3fI/0.jpg' },
+    { id: 'fRh_vgS2dFE', title: 'Mark Ronson - Uptown Funk ft. Bruno Mars', channel: 'MarkRonsonVEVO', uploadDate: '2026-01-27', thumbnail: 'https://img.youtube.com/vi/fRh_vgS2dFE/0.jpg' },
+    { id: '2Vv-BfVoq4g', title: 'Katy Perry - Roar (Official)', channel: 'KatyPerryVEVO', uploadDate: '2026-01-26', thumbnail: 'https://img.youtube.com/vi/2Vv-BfVoq4g/0.jpg' },
+    { id: 'kJQP7kiw5Fk', title: 'Wiz Khalifa - See You Again ft. Charlie Puth', channel: 'Wiz Khalifa', uploadDate: '2026-01-25', thumbnail: 'https://img.youtube.com/vi/kJQP7kiw5Fk/0.jpg' },
+    { id: 'p8URoA9L9hI', title: 'Crazy Frog - Axel F (Official Video)', channel: 'Crazy Frog', uploadDate: '2026-01-24', thumbnail: 'https://img.youtube.com/vi/p8URoA9L9hI/0.jpg' },
+    { id: 'hY7m5jjJ9e4', title: 'CoComelon - Bath Song', channel: 'Cocomelon - Nursery Rhymes', uploadDate: '2026-01-23', thumbnail: 'https://img.youtube.com/vi/hY7m5jjJ9e4/0.jpg' },
+    { id: 'L3wKzyIN1yk', title: 'El Chombo - Dame Tu Cosita feat. Cutty Ranks', channel: 'Ultra Music', uploadDate: '2026-01-22', thumbnail: 'https://img.youtube.com/vi/L3wKzyIN1yk/0.jpg' },
+    { id: 'x2dJp_oA-xI', title: 'Taylor Swift - Shake It Off', channel: 'TaylorSwiftVEVO', uploadDate: '2026-01-21', thumbnail: 'https://img.youtube.com/vi/x2dJp_oA-xI/0.jpg' },
 ];
 
 const videoList = document.getElementById('video-list');
@@ -14,10 +23,44 @@ const filterToday = document.getElementById('filter-today');
 const filterMonthly = document.getElementById('filter-monthly');
 const filterYear = document.getElementById('filter-year');
 
+let currentFilter = 'today';
+let currentFilteredVideos = [];
+const VIDEOS_PER_LOAD = 8;
+let loadedVideosCount = 0;
+let isRendering = false;
+
+// --- 유틸리티 함수 ---
+function debounce(func, delay) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+// --- 인피니트 스크롤 관련 함수 ---
+function loadNextVideos() {
+    if (isRendering) return;
+    isRendering = true;
+
+    const newVideosToLoad = currentFilteredVideos.slice(loadedVideosCount, loadedVideosCount + VIDEOS_PER_LOAD);
+    
+    if (newVideosToLoad.length > 0) {
+        renderNewVideos(newVideosToLoad);
+        loadedVideosCount += newVideosToLoad.length;
+    }
+    
+    isRendering = false;
+}
+
 // --- 필터링 로직 ---
 function filterVideos(period) {
+    currentFilter = period;
+    videoList.innerHTML = ''; // 새 필터 적용 시 목록 초기화
+    loadedVideosCount = 0; // 로드된 개수 초기화
+    
     let filteredVideos = [];
-    const today = new Date('2026-01-28'); // 오늘 날짜를 2026년 1월 28일로 고정
+    const today = new Date('2026-01-28'); // 오늘 날짜 고정
 
     switch(period) {
         case 'today':
@@ -29,63 +72,58 @@ function filterVideos(period) {
             filteredVideos = sampleVideos.filter(video => video.uploadDate.startsWith(currentYear.toString()));
             break;
         default:
-            // "1월 1주차"와 같은 형식 처리
             if (period.includes('월') && period.includes('주차')) {
                 const parts = period.split(' ');
                 const month = parseInt(parts[0].replace('월', ''));
                 const week = parseInt(parts[1].replace('주차', ''));
-
                 const startDate = (week - 1) * 7 + 1;
                 const endDate = week * 7;
-
                 filteredVideos = sampleVideos.filter(video => {
                     const videoDate = new Date(video.uploadDate);
-                    const videoMonth = videoDate.getMonth() + 1;
-                    const videoDay = videoDate.getDate();
-                    return videoMonth === month && videoDay >= startDate && videoDay <= endDate;
+                    return videoDate.getMonth() + 1 === month && videoDate.getDate() >= startDate && videoDate.getDate() <= endDate;
                 });
             } else {
                  filteredVideos = sampleVideos;
             }
             break;
     }
-    renderVideos(filteredVideos);
+    currentFilteredVideos = filteredVideos;
+    loadNextVideos(); // 첫번째 배치 로드
 }
 
-
 // --- 동영상 렌더링 ---
-function renderVideos(videos) {
-    videoList.innerHTML = '';
-    if (videos.length === 0) {
+function renderNewVideos(videos) {
+    if (videos.length === 0 && loadedVideosCount === 0) {
         videoList.innerHTML = '<p class="text-center">표시할 영상이 없습니다.</p>';
         return;
     }
 
-    const videoCards = videos.map(video => `
+    const videoCards = videos.map(video => {
+        const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
+        return `
         <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card h-100" onclick="window.open('https://www.youtube.com/watch?v=${video.id}', '_blank')">
-                <img src="${video.thumbnail}" class="card-img-top" alt="${video.title}">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">${video.title}</h5>
-                    <p class="card-text text-muted">${video.channel}</p>
+            <a href="${videoUrl}" target="_blank" class="card-link text-decoration-none text-dark">
+                <div class="card h-100">
+                    <img src="${video.thumbnail}" class="card-img-top" alt="${video.title}">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">${video.title}</h5>
+                        <p class="card-text text-muted">${video.channel}</p>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
-    `).join('');
+    `}).join('');
 
-    videoList.innerHTML = videoCards;
+    videoList.insertAdjacentHTML('beforeend', videoCards);
 }
-
 
 // --- 월별/주차별 메뉴 생성 ---
 function createMonthlyMenu() {
     const months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
-    months.forEach((month, index) => {
-        const monthIndex = index + 1;
-        
+    months.forEach((month) => {
         const monthLi = document.createElement('li');
         const monthDiv = document.createElement('div');
-        monthDiv.className = 'dropend'; // dropend for side menu
+        monthDiv.className = 'dropend';
 
         const monthA = document.createElement('a');
         monthA.className = 'dropdown-item dropdown-toggle';
@@ -106,7 +144,6 @@ function createMonthlyMenu() {
             weekA.onclick = (e) => {
                 e.stopPropagation();
                 filterVideos(`${month} ${i}주차`);
-                 // Hide the main dropdown
                 const mainDropdown = bootstrap.Dropdown.getInstance(filterMonthly.previousElementSibling);
                 if (mainDropdown) {
                     mainDropdown.hide();
@@ -123,15 +160,22 @@ function createMonthlyMenu() {
     });
 }
 
-
 // --- 이벤트 리스너 ---
 document.addEventListener('DOMContentLoaded', () => {
     createMonthlyMenu();
-    filterVideos('today'); // 초기 로드 시 오늘의 영상 표시 // 초기 로드 시 전체 영상 표시
+    filterVideos(currentFilter); 
 });
 
 filterToday.addEventListener('click', () => filterVideos('today'));
 filterYear.addEventListener('click', () => filterVideos('year'));
 
-// 초기화
-filterVideos('today'); // 초기 로드 시 오늘의 영상 표시
+window.addEventListener('scroll', debounce(() => {
+    // document.documentElement.scrollHeight: 전체 문서의 높이
+    // window.innerHeight: 브라우저 창의 보이는 부분의 높이
+    // window.scrollY: 스크롤된 높이
+    const isAtBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+    
+    if (isAtBottom && loadedVideosCount < currentFilteredVideos.length) {
+        loadNextVideos();
+    }
+}, 100));
