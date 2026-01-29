@@ -1,12 +1,19 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2/options");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
+const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 
 setGlobalOptions({ region: "asia-northeast3" });
 
 const YT_API_BASE = "https://www.googleapis.com/youtube/v3";
 const YOUTUBE_API_KEY = defineSecret("YOUTUBE_API_KEY");
+const CACHE_COLLECTION = "yt_cache";
+const SOURCE_API_ENDPOINT = "https://yt-feed-hub.pages.dev/api";
+
+admin.initializeApp();
+const db = admin.firestore();
 
 function safeInt(value) {
   const parsed = parseInt(value, 10);
@@ -40,6 +47,61 @@ async function fetchJson(url) {
   return response.json();
 }
 
+async function fetchFromSource(period, mode) {
+  const url = new URL(SOURCE_API_ENDPOINT);
+  url.searchParams.set("period", period);
+  url.searchParams.set("mode", mode);
+  url.searchParams.set("language", "ko");
+  const data = await fetchJson(url.toString());
+  return {
+    items: data.items || [],
+    fetchedAt: data.fetchedAt || new Date().toISOString()
+  };
+}
+
+exports.refreshYoutubeCache = onSchedule(
+  { schedule: "0 */4 * * *", timeZone: "UTC" },
+  async () => {
+    const periods = ["today", "3d", "7d", "30d"];
+    const modes = ["hot", "stable"];
+    const tasks = [];
+
+    for (const period of periods) {
+      for (const mode of modes) {
+        tasks.push(
+          fetchFromSource(period, mode)
+            .then((data) =>
+              db
+                .collection(CACHE_COLLECTION)
+                .doc(`${period}_${mode}`)
+                .set(data, { merge: true })
+            )
+            .catch(() => null)
+        );
+      }
+    }
+
+    await Promise.all(tasks);
+  }
+);
+
+exports.youtubeIssueCached = onRequest(async (req, res) => {
+  cors(req, res, async () => {
+    const period = String(req.query.period || "7d");
+    const mode = String(req.query.mode || "hot");
+    try {
+      const snap = await db
+        .collection(CACHE_COLLECTION)
+        .doc(`${period}_${mode}`)
+        .get();
+      const data = snap.exists ? snap.data() : null;
+      res.set("Cache-Control", "public, max-age=120");
+      res.json({ items: (data && data.items) || [], fetchedAt: data && data.fetchedAt });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+});
 exports.youtubeIssue = onRequest({ secrets: [YOUTUBE_API_KEY] }, async (req, res) => {
   cors(req, res, async () => {
     res.set("Cache-Control", "public, max-age=120");

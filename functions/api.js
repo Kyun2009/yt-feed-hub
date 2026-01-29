@@ -57,6 +57,7 @@ function withCors(body, status = 200) {
 
 export async function onRequest(context) {
   const request = context.request;
+  const cacheEndpoint = context.env.CACHE_ENDPOINT || "";
 
   if (request.method === "OPTIONS") {
     return new Response(null, {
@@ -91,6 +92,21 @@ export async function onRequest(context) {
     .split(",")
     .map((keyword) => keyword.trim())
     .filter(Boolean);
+
+  if (cacheEndpoint) {
+    const cacheUrl = new URL(cacheEndpoint);
+    cacheUrl.searchParams.set("period", period);
+    cacheUrl.searchParams.set("mode", mode);
+    try {
+      const cachedResponse = await fetch(cacheUrl.toString());
+      if (cachedResponse.ok) {
+        const cachedData = await cachedResponse.json();
+        return withCors({ items: cachedData.items || [], fetchedAt: cachedData.fetchedAt || null });
+      }
+    } catch {
+      // Ignore cache errors and fall back to live fetch
+    }
+  }
 
   const publishedAfter = buildPublishedAfter(period);
   const publishedAfterDate = buildPublishedAfterDate(period);

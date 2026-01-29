@@ -38,8 +38,8 @@ let filterRequestId = 0;
 let observer;
 const DEFAULT_API_ENDPOINT = '/api';
 const FALLBACK_API_ENDPOINT = 'https://yt-feed-hub.pages.dev/api';
-const isFirebaseHost = /(?:web\.app|firebaseapp\.com|cloudworkstations\.dev)$/.test(window.location.hostname);
-const API_ENDPOINT = isFirebaseHost ? FALLBACK_API_ENDPOINT : DEFAULT_API_ENDPOINT;
+const isPreviewHost = /(?:cloudworkstations\.dev)$/.test(window.location.hostname);
+const API_ENDPOINT = isPreviewHost ? FALLBACK_API_ENDPOINT : DEFAULT_API_ENDPOINT;
 
 const browserLanguage = (navigator.language || 'en').split('-')[0];
 const FILTER_CONFIG = {
@@ -243,7 +243,7 @@ async function fetchVideos(period, mode, options = {}) {
 
     const requestUrl = `${API_ENDPOINT}?${params.toString()}`;
     let response = await fetch(requestUrl);
-    if (!response.ok && !isFirebaseHost && API_ENDPOINT === DEFAULT_API_ENDPOINT) {
+    if (!response.ok && !isPreviewHost && API_ENDPOINT === DEFAULT_API_ENDPOINT) {
         response = await fetch(`${FALLBACK_API_ENDPOINT}?${params.toString()}`);
     }
     if (!response.ok) {

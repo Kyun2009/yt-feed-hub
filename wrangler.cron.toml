@@ -1,0 +1,10 @@
+name = "yt-feed-hub-cron"
+main = "cron-worker.js"
+compatibility_date = "2025-01-01"
+
+kv_namespaces = [
+  { binding = "YT_CACHE", id = "__REPLACE_WITH_KV_ID__" }
+]
+
+[triggers]
+crons = ["0 */4 * * *"]

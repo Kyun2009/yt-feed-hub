@@ -1,4 +1,7 @@
 {
+  "functions": {
+    "source": "firebase-functions"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
@@ -7,6 +10,12 @@
       "**/node_modules/**",
       "functions/**",
       "firebase-functions/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api",
+        "function": "youtubeIssueCached"
+      }
     ]
   }
 }
