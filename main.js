@@ -213,38 +213,7 @@ function renderNewVideos(videos) {
 
     videoList.insertAdjacentHTML('beforeend', videoCards);
 
-    // 렌더링된 카드만 골라서 가벼운 재생 가능성 검사
-    videos.forEach(video => {
-        const cardLink = videoList.querySelector(`.card-link[data-video-id="${video.id}"]`);
-        if (cardLink) {
-            checkVideoAvailability(video, cardLink.closest('.col-md-4'));
-        }
-    });
-}
-
-function checkVideoAvailability(video, cardContainer) {
-    if (!cardContainer) return;
-
-    // 1) 썸네일 로드 실패 시 플레이스홀더로 대체 (카드는 유지)
-    const imgEl = cardContainer.querySelector('img');
-    const img = new Image();
-    img.onerror = () => {
-        if (imgEl) {
-            imgEl.src =
-                'data:image/svg+xml;charset=UTF-8,' +
-                encodeURIComponent(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">' +
-                    '<rect width="640" height="360" fill="#e9ecef"/>' +
-                    '<text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d" font-family="sans-serif" font-size="20">Thumbnail unavailable</text>' +
-                    '</svg>'
-                );
-        }
-    };
-    img.src = video.thumbnail;
-}
-
-function hideUnavailableCard(cardContainer) {
-    cardContainer.style.display = 'none';
+    // 썸네일 검사는 제거 (필터링으로 인해 카드가 숨겨지는 현상 방지)
 }
 
 async function fetchVideos(period, mode, options = {}) {
