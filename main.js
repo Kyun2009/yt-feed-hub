@@ -156,13 +156,17 @@ async function filterVideos(period) {
     currentFilter = period;
     videoList.innerHTML = ''; // 새 필터 적용 시 목록 초기화
     loadedVideosCount = 0; // 로드된 개수 초기화
+    isRendering = false;
     videoList.dataset.period = period;
     
     videoList.innerHTML = '<p class="text-center text-muted">로딩 중...</p>';
 
     const cacheKey = `${period}:${currentMode}`;
     try {
-        const apiVideos = await fetchVideos(period, currentMode);
+        let apiVideos = await fetchVideos(period, currentMode);
+        if (!apiVideos.length && period === 'today') {
+            apiVideos = await fetchVideos(period, currentMode, { cacheBuster: Date.now() });
+        }
         if (apiVideos.length) {
             apiCache.set(cacheKey, apiVideos);
             currentFilteredVideos = apiVideos;
@@ -233,7 +237,7 @@ function hideUnavailableCard(cardContainer) {
     cardContainer.style.display = 'none';
 }
 
-async function fetchVideos(period, mode) {
+async function fetchVideos(period, mode, options = {}) {
     const params = new URLSearchParams({
         period,
         mode
@@ -247,6 +251,9 @@ async function fetchVideos(period, mode) {
     if (FILTER_CONFIG.maxSubs) params.set('maxSubs', FILTER_CONFIG.maxSubs);
     if (FILTER_CONFIG.excludeKeywords.length) {
         params.set('excludeKeywords', FILTER_CONFIG.excludeKeywords.join(','));
+    }
+    if (options.cacheBuster) {
+        params.set('_ts', String(options.cacheBuster));
     }
 
     const requestUrl = `${API_ENDPOINT}?${params.toString()}`;
