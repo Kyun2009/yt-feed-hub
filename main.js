@@ -30,6 +30,7 @@ const scrollSentinel = document.getElementById('scroll-sentinel');
 let currentFilter = 'today';
 let currentMode = 'hot';
 let currentFilteredVideos = [];
+const apiCache = new Map();
 const VIDEOS_PER_LOAD = 24;
 let loadedVideosCount = 0;
 let isRendering = false;
@@ -159,15 +160,23 @@ async function filterVideos(period) {
     
     videoList.innerHTML = '<p class="text-center text-muted">로딩 중...</p>';
 
+    const cacheKey = `${period}:${currentMode}`;
     try {
         const apiVideos = await fetchVideos(period, currentMode);
         if (apiVideos.length) {
+            apiCache.set(cacheKey, apiVideos);
             currentFilteredVideos = apiVideos;
+        } else if (apiCache.has(cacheKey)) {
+            currentFilteredVideos = apiCache.get(cacheKey);
         } else {
             currentFilteredVideos = filterVideosByPeriod(sampleVideos, period);
         }
     } catch (error) {
-        currentFilteredVideos = filterVideosByPeriod(sampleVideos, period);
+        if (apiCache.has(cacheKey)) {
+            currentFilteredVideos = apiCache.get(cacheKey);
+        } else {
+            currentFilteredVideos = filterVideosByPeriod(sampleVideos, period);
+        }
     }
 
     videoList.innerHTML = '';
