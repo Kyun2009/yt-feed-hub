@@ -188,7 +188,9 @@ async function filterVideos(period) {
     }
 
     videoList.innerHTML = '';
-    loadNextVideos(); // 첫번째 배치 로드
+    const initialVideos = currentFilteredVideos.slice(0, VIDEOS_PER_LOAD);
+    renderNewVideos(initialVideos);
+    loadedVideosCount = initialVideos.length;
 }
 
 // --- 동영상 렌더링 ---
