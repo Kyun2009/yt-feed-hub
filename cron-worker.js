@@ -11,8 +11,10 @@ async function fetchAndCache(env, period, mode) {
   url.searchParams.set("mode", mode);
   url.searchParams.set("language", env.DEFAULT_LANGUAGE || "ko");
 
+  console.log("fetch start", { period, mode, url: url.toString() });
   const response = await fetch(url.toString());
   if (!response.ok) {
+    console.warn("fetch failed", { period, mode, status: response.status });
     throw new Error(`Source API error: ${response.status}`);
   }
   const data = await response.json();
@@ -26,6 +28,7 @@ async function fetchAndCache(env, period, mode) {
   await env.YT_CACHE.put(`cache:${period}:${mode}`, payload, {
     expirationTtl: CACHE_TTL_SECONDS
   });
+  console.log("fetch success", { period, mode, items: (data.items || []).length });
 }
 
 async function extendExistingCache(env, period, mode) {

@@ -42,7 +42,7 @@ async function fetchJson(url) {
   return response.json();
 }
 
-function withCors(body, status = 200) {
+function withCors(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -50,7 +50,8 @@ function withCors(body, status = 200) {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
-      "Cache-Control": "public, max-age=120"
+      "Cache-Control": "public, max-age=120",
+      ...extraHeaders
     }
   });
 }
@@ -101,9 +102,16 @@ export async function onRequest(context) {
       const cachedResponse = await fetch(cacheUrl.toString());
       if (cachedResponse.ok) {
         const cachedData = await cachedResponse.json();
-        return withCors({ items: cachedData.items || [], fetchedAt: cachedData.fetchedAt || null });
+        console.log("cache hit", { period, mode, cacheUrl: cacheUrl.toString() });
+        return withCors(
+          { items: cachedData.items || [], fetchedAt: cachedData.fetchedAt || null },
+          200,
+          { "X-Cache": "HIT" }
+        );
       }
+      console.warn("cache miss", { period, mode, status: cachedResponse.status });
     } catch {
+      console.warn("cache error", { period, mode, cacheUrl: cacheUrl.toString() });
       // Ignore cache errors and fall back to live fetch
     }
   }
@@ -150,7 +158,11 @@ export async function onRequest(context) {
       );
 
       if (!recentPopularItems.length) {
-        return withCors({ items: [], fetchedAt: new Date().toISOString() });
+        return withCors(
+          { items: [], fetchedAt: new Date().toISOString() },
+          200,
+          { "X-Cache": "MISS" }
+        );
       }
 
       const now = new Date();
@@ -306,7 +318,7 @@ export async function onRequest(context) {
       });
 
       items.sort((a, b) => b.score - a.score);
-      return withCors({ items, fetchedAt: now.toISOString() });
+      return withCors({ items, fetchedAt: now.toISOString() }, 200, { "X-Cache": "MISS" });
     }
 
     const videosParams = new URLSearchParams({
@@ -492,7 +504,7 @@ export async function onRequest(context) {
     });
 
     items.sort((a, b) => b.score - a.score);
-    return withCors({ items, fetchedAt: now.toISOString() });
+    return withCors({ items, fetchedAt: now.toISOString() }, 200, { "X-Cache": "MISS" });
   } catch (error) {
     return withCors({ error: error.message }, 500);
   }
