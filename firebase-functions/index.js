@@ -59,31 +59,7 @@ async function fetchFromSource(period, mode) {
   };
 }
 
-exports.refreshYoutubeCache = onSchedule(
-  { schedule: "0 */4 * * *", timeZone: "UTC" },
-  async () => {
-    const periods = ["today", "3d", "7d", "30d"];
-    const modes = ["hot", "stable"];
-    const tasks = [];
-
-    for (const period of periods) {
-      for (const mode of modes) {
-        tasks.push(
-          fetchFromSource(period, mode)
-            .then((data) =>
-              db
-                .collection(CACHE_COLLECTION)
-                .doc(`${period}_${mode}`)
-                .set(data, { merge: true })
-            )
-            .catch(() => null)
-        );
-      }
-    }
-
-    await Promise.all(tasks);
-  }
-);
+// Firebase scheduler disabled; use Cloudflare Worker cron instead.
 
 exports.youtubeIssueCached = onRequest(async (req, res) => {
   cors(req, res, async () => {

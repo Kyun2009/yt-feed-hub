@@ -55,6 +55,7 @@ async function handleApiRequest(request, env) {
 
 export default {
   async scheduled(event, env, ctx) {
+    console.log("cron fired", new Date().toISOString());
     const tasks = [];
     for (const period of PERIODS) {
       for (const mode of MODES) {
