@@ -1,6 +1,7 @@
 const DEFAULT_SOURCE_API = "https://yt-feed-hub.pages.dev/api";
 const PERIODS = ["today", "3d", "7d", "30d"];
 const MODES = ["hot", "stable"];
+const STABLE_PAGES = 5;
 // 8 hours + 5 minutes to outlive the cron interval.
 const CACHE_TTL_SECONDS = 8 * 60 * 60 + 300;
 
@@ -10,6 +11,9 @@ async function fetchAndCache(env, period, mode) {
   url.searchParams.set("period", period);
   url.searchParams.set("mode", mode);
   url.searchParams.set("language", env.DEFAULT_LANGUAGE || "ko");
+  if (mode === "stable") {
+    url.searchParams.set("pages", String(STABLE_PAGES));
+  }
 
   console.log("fetch start", { period, mode, url: url.toString() });
   const response = await fetch(url.toString());

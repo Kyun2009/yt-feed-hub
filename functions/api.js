@@ -1,8 +1,14 @@
 const YT_API_BASE = "https://www.googleapis.com/youtube/v3";
 
+
+
 function safeInt(value) {
   const parsed = parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function buildPublishedAfter(period) {
@@ -33,6 +39,14 @@ function normalize(value, min, max) {
   return (value - min) / (max - min);
 }
 
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -54,6 +68,48 @@ function withCors(body, status = 200, extraHeaders = {}) {
       ...extraHeaders
     }
   });
+}
+
+async function fetchSearchVideoIds(baseParams, pages) {
+  const videoIds = new Set();
+  let pageToken = "";
+
+  for (let i = 0; i < pages; i += 1) {
+    const params = new URLSearchParams(baseParams);
+    if (pageToken) {
+      params.set("pageToken", pageToken);
+    }
+    const searchUrl = `${YT_API_BASE}/search?${params.toString()}`;
+    const searchData = await fetchJson(searchUrl);
+    (searchData.items || [])
+      .map((item) => item.id && item.id.videoId)
+      .filter(Boolean)
+      .forEach((id) => videoIds.add(id));
+
+    pageToken = searchData.nextPageToken || "";
+    if (!pageToken) break;
+  }
+
+  return Array.from(videoIds);
+}
+
+async function fetchPopularItems(baseParams, pages) {
+  const items = [];
+  let pageToken = "";
+
+  for (let i = 0; i < pages; i += 1) {
+    const params = new URLSearchParams(baseParams);
+    if (pageToken) {
+      params.set("pageToken", pageToken);
+    }
+    const popularUrl = `${YT_API_BASE}/videos?${params.toString()}`;
+    const popularData = await fetchJson(popularUrl);
+    items.push(...(popularData.items || []));
+    pageToken = popularData.nextPageToken || "";
+    if (!pageToken) break;
+  }
+
+  return items;
 }
 
 export async function onRequest(context) {
@@ -82,6 +138,8 @@ export async function onRequest(context) {
   }
 
   const url = new URL(request.url);
+
+
   const period = url.searchParams.get("period") || "7d";
   const mode = url.searchParams.get("mode") || "hot";
   const region = url.searchParams.get("region") || "KR";
@@ -89,6 +147,7 @@ export async function onRequest(context) {
   const categoryId = url.searchParams.get("categoryId") || "";
   const minSubs = safeInt(url.searchParams.get("minSubs"));
   const maxSubs = safeInt(url.searchParams.get("maxSubs"));
+  const pages = clamp(safeInt(url.searchParams.get("pages")) || 1, 1, 5);
   const excludeKeywords = (url.searchParams.get("excludeKeywords") || "")
     .split(",")
     .map((keyword) => keyword.trim())
@@ -133,11 +192,7 @@ export async function onRequest(context) {
   }
 
   try {
-    const searchUrl = `${YT_API_BASE}/search?${searchParams.toString()}`;
-    const searchData = await fetchJson(searchUrl);
-    const videoIds = (searchData.items || [])
-      .map((item) => item.id && item.id.videoId)
-      .filter(Boolean);
+    const videoIds = await fetchSearchVideoIds(searchParams, pages);
 
     if (!videoIds.length) {
       const popularParams = new URLSearchParams({
@@ -150,9 +205,7 @@ export async function onRequest(context) {
       if (categoryId) {
         popularParams.set("videoCategoryId", categoryId);
       }
-      const popularUrl = `${YT_API_BASE}/videos?${popularParams.toString()}`;
-      const popularData = await fetchJson(popularUrl);
-      const popularItems = popularData.items || [];
+      const popularItems = await fetchPopularItems(popularParams, pages);
       const recentPopularItems = popularItems.filter((video) =>
         isWithinPeriod(video.snippet && video.snippet.publishedAt, publishedAfterDate)
       );
@@ -299,6 +352,8 @@ export async function onRequest(context) {
             ) +
           0.1 * normalize(metrics.likeRate, ranges.likeRate.min, ranges.likeRate.max);
 
+        const comment = item.description ? `요약: ${item.description.substring(0, 150)}...` : '요약 정보가 없습니다.';
+
         return {
           id: item.id,
           title: item.title,
@@ -313,7 +368,8 @@ export async function onRequest(context) {
             viewVelocity: metrics.viewVelocity,
             subscribers: 0
           },
-          score: mode === "stable" ? scoreStable : scoreHot
+          score: mode === "stable" ? scoreStable : scoreHot,
+          comment: comment,
         };
       });
 
@@ -321,18 +377,23 @@ export async function onRequest(context) {
       return withCors({ items, fetchedAt: now.toISOString() }, 200, { "X-Cache": "MISS" });
     }
 
-    const videosParams = new URLSearchParams({
-      key: apiKey,
-      part: "snippet,statistics,status,contentDetails",
-      id: videoIds.join(","),
-      maxResults: "50"
-    });
-    const videosUrl = `${YT_API_BASE}/videos?${videosParams.toString()}`;
-    const videosData = await fetchJson(videosUrl);
+    const videoChunks = chunkArray(videoIds, 50);
+    let videoItems = [];
+    for (const chunk of videoChunks) {
+      const videosParams = new URLSearchParams({
+        key: apiKey,
+        part: "snippet,statistics,status,contentDetails",
+        id: chunk.join(","),
+        maxResults: "50"
+      });
+      const videosUrl = `${YT_API_BASE}/videos?${videosParams.toString()}`;
+      const videosData = await fetchJson(videosUrl);
+      videoItems = videoItems.concat(videosData.items || []);
+    }
 
     const channelIds = [
       ...new Set(
-        (videosData.items || [])
+        videoItems
           .map((video) => video.snippet && video.snippet.channelId)
           .filter(Boolean)
       )
@@ -340,21 +401,24 @@ export async function onRequest(context) {
 
     let channelMap = new Map();
     if (channelIds.length) {
-      const channelsParams = new URLSearchParams({
-        key: apiKey,
-        part: "statistics,snippet",
-        id: channelIds.join(","),
-        maxResults: "50"
-      });
-      const channelsUrl = `${YT_API_BASE}/channels?${channelsParams.toString()}`;
-      const channelsData = await fetchJson(channelsUrl);
-      channelMap = new Map(
-        (channelsData.items || []).map((channel) => [channel.id, channel])
-      );
+      const channelChunks = chunkArray(channelIds, 50);
+      const channelItems = [];
+      for (const chunk of channelChunks) {
+        const channelsParams = new URLSearchParams({
+          key: apiKey,
+          part: "statistics,snippet",
+          id: chunk.join(","),
+          maxResults: "50"
+        });
+        const channelsUrl = `${YT_API_BASE}/channels?${channelsParams.toString()}`;
+        const channelsData = await fetchJson(channelsUrl);
+        channelItems.push(...(channelsData.items || []));
+      }
+      channelMap = new Map(channelItems.map((channel) => [channel.id, channel]));
     }
 
     const now = new Date();
-    let items = (videosData.items || []).map((video) => {
+    let items = videoItems.map((video) => {
       const snippet = video.snippet || {};
       const statistics = video.statistics || {};
       const status = video.status || {};
@@ -482,9 +546,15 @@ export async function onRequest(context) {
         0.5 * normalize(metrics.views, ranges.views.min, ranges.views.max) +
         0.25 * normalize(metrics.likes, ranges.likes.min, ranges.likes.max) +
         0.15 *
-          normalize(metrics.comments, ranges.comments.min, ranges.comments.max) +
+          normalize(
+            metrics.comments,
+            ranges.comments.min,
+            ranges.comments.max
+          ) +
         0.1 * normalize(metrics.likeRate, ranges.likeRate.min, ranges.likeRate.max);
 
+      const comment = item.description ? `요약: ${item.description.substring(0, 150)}...` : '요약 정보가 없습니다.';
+      
       return {
         id: item.id,
         title: item.title,
@@ -499,7 +569,8 @@ export async function onRequest(context) {
           viewVelocity: metrics.viewVelocity,
           subscribers: metrics.subscribers
         },
-        score: mode === "stable" ? scoreStable : scoreHot
+        score: mode === "stable" ? scoreStable : scoreHot,
+        comment: comment,
       };
     });
 

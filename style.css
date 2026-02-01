@@ -85,6 +85,59 @@ main.container {
     padding: 24px 0 60px;
 }
 
+.editorial-note {
+    margin-bottom: 24px;
+}
+
+.info-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 0 10px 26px rgba(20, 26, 35, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    height: 100%;
+}
+
+.info-card h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.info-card h3 {
+    font-size: 15px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.info-card p {
+    margin-bottom: 12px;
+    color: var(--muted);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+.info-grid ul {
+    padding-left: 18px;
+    margin-bottom: 0;
+    color: var(--muted);
+}
+
+.info-card--accent {
+    background: linear-gradient(135deg, rgba(255, 90, 61, 0.12), rgba(27, 111, 255, 0.12));
+    border: 1px solid rgba(27, 111, 255, 0.15);
+}
+
+.info-meta {
+    font-weight: 600;
+    color: var(--ink);
+}
+
 #video-list .card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
@@ -93,6 +146,7 @@ main.container {
     box-shadow: 0 6px 18px rgba(20, 26, 35, 0.08);
     border-radius: 16px;
     overflow: hidden;
+    position: relative;
 }
 
 /* Today uses the same sizing as other categories */
@@ -100,6 +154,37 @@ main.container {
 #video-list .card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow);
+}
+
+#video-list .card::after {
+    content: attr(data-editor-comment);
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(17, 18, 20, 0.92);
+    color: #ffffff;
+    font-size: 12px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+}
+
+#video-list .card:hover::after,
+#video-list .card:focus-within::after,
+.card-link:hover .card::after,
+.card-link:focus .card::after {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .card-img-top {
@@ -117,6 +202,104 @@ main.container {
 
 .card-text {
     color: var(--muted);
+}
+
+.site-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 24px 0 36px;
+}
+
+.footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.footer-brand {
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.footer-meta {
+    color: var(--muted);
+    margin: 0;
+    font-size: 14px;
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.footer-links a {
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer-links a:hover,
+.footer-links a:focus {
+    color: var(--accent-2);
+}
+
+.page-shell {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 0 60px;
+}
+
+.page-shell h1 {
+    font-size: clamp(24px, 3vw, 36px);
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.page-shell h2 {
+    font-size: 18px;
+    margin-top: 24px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.page-shell p,
+.page-shell li {
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.page-shell ul {
+    padding-left: 18px;
+}
+
+.contact-form {
+    max-width: 560px;
+}
+
+.contact-form .form-label {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.contact-form .form-control {
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: none;
+    padding: 10px 14px;
+}
+
+.contact-form .form-control:focus {
+    border-color: rgba(27, 111, 255, 0.45);
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.contact-form .btn-primary {
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-weight: 600;
+    box-shadow: 0 12px 18px rgba(27, 111, 255, 0.18);
 }
 
 .card-link:focus-visible {
@@ -137,5 +320,9 @@ main.container {
 
     .hero-subtitle {
         font-size: 14px;
+    }
+
+    .footer-inner {
+        gap: 12px;
     }
 }
