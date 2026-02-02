@@ -90,8 +90,22 @@ function getVideoDate(video) {
 }
 
 function filterVideosByPeriod(videos, period) {
+    if (period === 'today') {
+        const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+        const DAY_MS = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const kstNowMs = now.getTime() + KST_OFFSET_MS;
+        const startOfKstDayMs = Math.floor(kstNowMs / DAY_MS) * DAY_MS;
+        const start = new Date(startOfKstDayMs - KST_OFFSET_MS);
+
+        return videos.filter(video => {
+            const videoDate = getVideoDate(video);
+            if (!videoDate) return false;
+            return videoDate >= start && videoDate <= now;
+        });
+    }
+
     const periodHoursMap = {
-        today: 24,
         '3d': 24 * 3,
         '7d': 24 * 7,
         '30d': 24 * 30

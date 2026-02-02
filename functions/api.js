@@ -12,9 +12,17 @@ function clamp(value, min, max) {
 }
 
 function buildPublishedAfter(period) {
+  if (period === "today") {
+    // "today" means KST calendar day, not rolling last 24 hours.
+    const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const kstNowMs = Date.now() + KST_OFFSET_MS;
+    const startOfKstDayMs = Math.floor(kstNowMs / DAY_MS) * DAY_MS;
+    return new Date(startOfKstDayMs - KST_OFFSET_MS).toISOString();
+  }
+
   const now = new Date();
   const hoursMap = {
-    today: 24,
     "3d": 24 * 3,
     "7d": 24 * 7,
     "30d": 24 * 30
@@ -138,12 +146,12 @@ export async function onRequest(context) {
   }
 
   const url = new URL(request.url);
+  const period = url.searchParams.get("period") || "7d";
   const skipCache =
     url.searchParams.get("cache") === "skip" ||
     url.searchParams.get("cache") === "0" ||
     request.headers.get("X-Cache-Bypass") === "1";
 
-  const period = url.searchParams.get("period") || "7d";
   const mode = url.searchParams.get("mode") || "hot";
   const region = url.searchParams.get("region") || "KR";
   const language = url.searchParams.get("language") || "ko";
